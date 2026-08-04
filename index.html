@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#6C5CE7">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>마이스터 캘린더</title>
+<style>
+:root{
+  --p:#6C5CE7; --p2:#8B7CF6; --lav-l:#EDE9FE; --bg:#F7F6FD; --card:#FFFFFF;
+  --tx:#2B2A3D; --sub:#8583A0; --line:#E9E7F5; --header1:#6C5CE7; --header2:#A78BFA;
+  --c-comp:#3B82F6; --c-gisa:#F5A623; --c-hist:#F45B69; --c-kor:#22C08C;
+  --c-toeic:#12B5CB; --c-opic:#FF8A3D; --c-school:#9B6BEA; --c-goal:#F0609A; --c-custom:#5CA8A0;
+  --sat:#3B82F6; --sun:#F45B69;
+}
+*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Pretendard',system-ui,Roboto,'Noto Sans KR',sans-serif;-webkit-tap-highlight-color:transparent}
+html,body{touch-action:manipulation}
+body{background:var(--bg);color:var(--tx);padding-bottom:calc(72px + env(safe-area-inset-bottom))}
+header{background:linear-gradient(120deg,var(--header1),var(--header2));color:#fff;padding:calc(16px + env(safe-area-inset-top)) 18px 16px;position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 10px rgba(108,92,231,.25)}
+header h1{font-size:1.15rem;font-weight:800;letter-spacing:-.01em}
+header .dday{font-size:.74rem;background:rgba(255,255,255,.25);color:#fff;padding:5px 12px;border-radius:999px;font-weight:800}
+.page{display:none;padding:14px;max-width:640px;margin:0 auto}
+.page.active{display:block}
+.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:16px;box-shadow:0 2px 10px rgba(108,92,231,.06);margin-bottom:12px}
+
+/* 하단 탭 */
+nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--line);display:flex;z-index:30;padding-bottom:env(safe-area-inset-bottom);box-shadow:0 -2px 10px rgba(108,92,231,.06)}
+nav button{flex:1;background:none;border:none;padding:8px 0 6px;font-size:.65rem;color:var(--sub);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;font-weight:700}
+nav button .ic{font-size:1.3rem;line-height:1;transition:transform .15s}
+nav button.on{color:var(--p)}
+nav button.on .ic{transform:scale(1.15)}
+
+/* 캘린더 */
+.cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.cal-head b{font-size:1.15rem;font-weight:800;color:var(--tx)}
+.cal-head button{border:none;background:var(--lav-l);width:36px;height:36px;border-radius:12px;font-size:1.05rem;cursor:pointer;color:var(--p);font-weight:800}
+.cal-wrap{touch-action:pan-y}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.cal-grid .wd{text-align:center;font-size:.72rem;color:var(--sub);padding:4px 0 8px;font-weight:800}
+.cal-grid .wd:first-child{color:var(--sun)}
+.cal-grid .wd:last-child{color:var(--sat)}
+.day{min-height:58px;border-radius:12px;padding:4px 2px 3px;text-align:center;font-size:.85rem;cursor:pointer;position:relative;font-weight:700;color:var(--tx);transition:background .1s}
+.day .num{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%}
+.day.sun .num{color:var(--sun)}
+.day.sat .num{color:var(--sat)}
+.day.other{opacity:.28}
+.day.today .num{background:var(--p);color:#fff;font-weight:800}
+.day:active{background:var(--lav-l)}
+.day .dots{display:flex;gap:2px;justify-content:center;flex-wrap:wrap;margin-top:3px;min-height:8px}
+.dot{width:7px;height:7px;border-radius:50%;box-shadow:0 0 0 1.5px #fff}
+.dot.more{width:auto;height:auto;border-radius:5px;font-size:.55rem;font-weight:800;color:#fff;background:var(--sub);padding:0 3px;box-shadow:none}
+.legend{display:flex;gap:8px 12px;flex-wrap:wrap;margin-top:12px;font-size:.7rem;color:var(--sub);font-weight:600}
+.legend span{display:flex;align-items:center;gap:4px}
+.legend .dot{box-shadow:none}
+
+/* 일정 리스트 */
+.ev{display:flex;gap:10px;padding:10px 4px;border-bottom:1px solid var(--line);align-items:center}
+.ev:last-child{border-bottom:none}
+.ev .bar{width:4px;align-self:stretch;border-radius:2px;flex-shrink:0}
+.ev .t{flex:1}
+.ev .t b{font-size:.88rem;display:block}
+.ev .t small{color:var(--sub);font-size:.72rem}
+.ev .dd{font-size:.72rem;font-weight:800;color:var(--p);white-space:nowrap}
+.ev .dd.past{color:#c9c7dd}
+.ev .del{border:none;background:none;color:#c9c7dd;font-size:1rem;cursor:pointer;padding:4px}
+h2.sec{font-size:1rem;font-weight:800;color:var(--tx);margin:4px 2px 10px;display:flex;justify-content:space-between;align-items:center}
+.chips{display:flex;gap:6px;overflow-x:auto;padding:2px 0 10px;-webkit-overflow-scrolling:touch}
+.chips button{flex-shrink:0;border:1.5px solid var(--line);background:var(--card);padding:6px 12px;border-radius:999px;font-size:.75rem;font-weight:700;color:var(--sub);cursor:pointer}
+.chips button.on{background:var(--p);border-color:var(--p);color:#fff}
+
+/* 목표 */
+.goal{display:flex;gap:10px;align-items:center;padding:12px 4px;border-bottom:1px solid var(--line)}
+.goal:last-child{border-bottom:none}
+.goal input[type=checkbox]{width:20px;height:20px;accent-color:var(--p)}
+.goal .t{flex:1}
+.goal .t b{font-size:.88rem;display:block}
+.goal.done .t b{text-decoration:line-through;color:var(--sub)}
+.goal small{color:var(--sub);font-size:.72rem}
+.goal .del{border:none;background:none;color:#c9c7dd;font-size:1.1rem;cursor:pointer}
+.frm{display:flex;flex-direction:column;gap:8px}
+.frm input,.frm select{padding:11px 12px;border:1.5px solid var(--line);border-radius:12px;font-size:.9rem;outline:none;background:var(--bg);color:var(--tx)}
+.frm input:focus,.frm select:focus{border-color:var(--p)}
+.btn{background:var(--p);color:#fff;border:none;padding:12px;border-radius:14px;font-size:.9rem;font-weight:800;cursor:pointer;width:100%}
+.btn.ghost{background:var(--lav-l);color:var(--p)}
+.row2{display:flex;gap:8px}
+.row2>*{flex:1}
+
+/* 알림 설정 */
+.set-row{display:flex;justify-content:space-between;align-items:center;padding:12px 2px;border-bottom:1px solid var(--line)}
+.set-row:last-child{border-bottom:none}
+.set-row b{font-size:.88rem}
+.set-row small{display:block;color:var(--sub);font-size:.72rem;margin-top:2px}
+.sw{position:relative;width:46px;height:26px;flex-shrink:0}
+.sw input{opacity:0;width:0;height:0}
+.sw i{position:absolute;inset:0;background:#DCD9F0;border-radius:999px;transition:.2s;cursor:pointer}
+.sw i:before{content:"";position:absolute;width:20px;height:20px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}
+.sw input:checked+i{background:var(--p)}
+.sw input:checked+i:before{transform:translateX(20px)}
+.daychips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.daychips button{border:1.5px solid var(--line);background:var(--card);padding:6px 12px;border-radius:999px;font-size:.75rem;font-weight:700;color:var(--sub);cursor:pointer}
+.daychips button.on{background:var(--p);border-color:var(--p);color:#fff}
+.note{font-size:.72rem;color:var(--sub);line-height:1.5;margin-top:8px}
+
+/* 학교 검색 */
+.sch-item{padding:10px 4px;border-bottom:1px solid var(--line);cursor:pointer}
+.sch-item b{font-size:.88rem;display:block}
+.sch-item small{color:var(--sub);font-size:.72rem}
+
+/* ===== 기업 검색기 (컴팩트) ===== */
+.jw-search input{width:100%;padding:10px 12px;border:1.5px solid var(--line);border-radius:12px;font-size:.85rem;outline:none;background:var(--bg);color:var(--tx)}
+.jw-filters{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.jw-filters button{background:var(--lav-l);border:none;padding:5px 11px;border-radius:999px;cursor:pointer;font-weight:700;font-size:.7rem;color:var(--p)}
+.jw-filters button.on{background:var(--p);color:#fff}
+.jw-stats{font-size:.72rem;color:var(--sub);margin:4px 2px 8px}
+.jw-item{padding:10px 4px;border-bottom:1px solid var(--line)}
+.jw-item:last-child{border-bottom:none}
+.jw-top{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:4px}
+.jw-no{background:var(--bg);padding:1px 6px;border-radius:4px;font-weight:800;font-size:.65rem;color:var(--sub)}
+.jw-cat{background:#E1F7EF;color:#0E9A6C;padding:2px 7px;border-radius:4px;font-weight:700;font-size:.62rem}
+.jw-name{font-weight:800;font-size:.85rem;color:var(--tx)}
+.jw-desc{white-space:pre-line;font-size:.74rem;color:var(--sub);line-height:1.5}
+.empty{padding:30px;text-align:center;color:var(--sub);font-size:.85rem}
+
+.modal{position:fixed;inset:0;background:rgba(43,42,61,.45);display:none;align-items:flex-end;justify-content:center;z-index:50}
+.modal.show{display:flex}
+.sheet{background:var(--card);border-radius:22px 22px 0 0;padding:18px;width:100%;max-width:640px;max-height:80vh;overflow-y:auto}
+.sheet h3{font-size:1.05rem;font-weight:800;color:var(--tx);margin-bottom:12px}
+
+/* 일정 추가 FAB */
+.fab{position:fixed;right:18px;bottom:calc(84px + env(safe-area-inset-bottom));width:56px;height:56px;border-radius:50%;background:linear-gradient(120deg,var(--header1),var(--header2));color:#fff;border:none;font-size:1.6rem;font-weight:700;box-shadow:0 6px 16px rgba(108,92,231,.4);cursor:pointer;z-index:25;display:flex;align-items:center;justify-content:center;line-height:1}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>📅 마이스터 캘린더</h1>
+  <span class="dday" id="nextDday"></span>
+</header>
+
+<!-- 캘린더 -->
+<div class="page active" id="pg-cal">
+  <div class="card">
+    <div class="cal-head">
+      <button onclick="moveMonth(-1)">◀</button>
+      <b id="calTitle"></b>
+      <button onclick="moveMonth(1)">▶</button>
+    </div>
+    <div class="cal-wrap" id="calWrap">
+      <div class="cal-grid" id="calGrid"></div>
+    </div>
+    <div class="legend" id="calLegend"></div>
+  </div>
+  <div class="chips" id="filterChips"></div>
+  <div class="card">
+    <h2 class="sec">다가오는 일정</h2>
+    <div id="upcomingList"></div>
+  </div>
+</div>
+<button class="fab" id="addEventFab" onclick="openAddEvent()">＋</button>
+
+<!-- 목표 -->
+<div class="page" id="pg-goal">
+  <div class="card">
+    <h2 class="sec">🎯 새 목표</h2>
+    <div class="frm">
+      <input id="goalTitle" placeholder="예: 전기기능사 필기 합격">
+      <div class="row2">
+        <input id="goalDate" type="date">
+        <select id="goalCat">
+          <option value="goal">일반</option><option value="comp">컴활</option>
+          <option value="gisa">기능사</option><option value="hist">한국사</option><option value="kor">KBS한국어</option>
+          <option value="toeic">토익</option><option value="opic">오픽</option>
+        </select>
+      </div>
+      <button class="btn" onclick="addGoal()">목표 추가</button>
+    </div>
+  </div>
+  <div class="card">
+    <h2 class="sec">내 목표</h2>
+    <div id="goalList"></div>
+  </div>
+</div>
+
+<!-- 학교 -->
+<div class="page" id="pg-school">
+  <div class="card">
+    <h2 class="sec">🏫 학교 검색</h2>
+    <div class="frm">
+      <div class="row2">
+        <input id="schoolQ" placeholder="학교 이름 (예: 구미전자공고)">
+        <button class="btn" style="flex:0 0 80px" onclick="searchSchool()">검색</button>
+      </div>
+    </div>
+    <div id="schoolResults"></div>
+  </div>
+  <div class="card" id="mySchoolCard" style="display:none">
+    <h2 class="sec">📌 <span id="mySchoolName"></span> <button class="btn ghost" style="width:auto;padding:6px 12px;font-size:.72rem" onclick="clearSchool()">해제</button></h2>
+    <div id="schoolEvents"></div>
+  </div>
+</div>
+
+<!-- 기업검색 -->
+<div class="page" id="pg-job">
+  <div class="card">
+    <h2 class="sec">🎯 취업 희망 기업 조건 검색</h2>
+    <div class="jw-search"><input id="jwInput" placeholder="기업명, 초성(ㅅㅅ), 자격요건 검색..."></div>
+    <div class="jw-filters" id="jwFilters"></div>
+    <div class="jw-stats" id="jwStats"></div>
+    <div id="jwList"></div>
+  </div>
+</div>
+
+<!-- 설정 -->
+<div class="page" id="pg-set">
+  <div class="card">
+    <h2 class="sec">🔔 알림 설정</h2>
+    <div class="set-row">
+      <div><b>시험 알림</b><small>잠금화면에 알림을 표시해요</small></div>
+      <label class="sw"><input type="checkbox" id="notifOn" onchange="toggleNotif()"><i></i></label>
+    </div>
+    <div style="padding:12px 2px">
+      <b style="font-size:.88rem">알림 시점 (며칠 전)</b>
+      <div class="daychips" id="dayChips"></div>
+      <p class="note">예: "7일"을 켜면 시험 7일 전에 <b>"⏰ 전기기능사 필기, 7일 전입니다!"</b> 알림이 와요. 여러 개 선택 가능.</p>
+    </div>
+    <div class="set-row">
+      <div><b>알림 시간</b><small>알림을 받을 시간</small></div>
+      <input type="time" id="notifTime" value="08:00" onchange="saveSettings();scheduleAll()" style="border:1.5px solid var(--line);border-radius:8px;padding:6px 8px;font-size:.85rem">
+    </div>
+  </div>
+  <div class="card">
+    <h2 class="sec">📲 앱 설치</h2>
+    <button class="btn" id="installBtn" onclick="installApp()" style="display:none">홈 화면에 설치하기</button>
+    <p class="note">iPhone: Safari 공유 버튼 → "홈 화면에 추가"<br>Android: Chrome 메뉴 → "앱 설치" 또는 위 버튼</p>
+  </div>
+  <div class="card">
+    <h2 class="sec">📚 시험 일정 출처</h2>
+    <div id="sourceList"></div>
+    <p class="note">⚠️ 위 기관들의 2026년 공고를 기준으로 정리했지만, 접수 마감·고사장 상황에 따라 세부 일정이 바뀔 수 있어요. 시험 직전엔 꼭 공식 사이트에서 다시 확인하세요.</p>
+  </div>
+</div>
+
+<nav>
+  <button class="on" data-pg="pg-cal"><span class="ic">📅</span>캘린더</button>
+  <button data-pg="pg-goal"><span class="ic">🎯</span>목표</button>
+  <button data-pg="pg-school"><span class="ic">🏫</span>학교</button>
+  <button data-pg="pg-job"><span class="ic">💼</span>기업검색</button>
+  <button data-pg="pg-set"><span class="ic">⚙️</span>설정</button>
+</nav>
+
+<div class="modal" id="dayModal" onclick="if(event.target===this)this.classList.remove('show')">
+  <div class="sheet"><h3 id="dayModalTitle"></h3><div id="dayModalList"></div></div>
+</div>
+
+<div class="modal" id="addEventModal" onclick="if(event.target===this)closeAddEvent()">
+  <div class="sheet">
+    <h3>➕ 내 일정 추가</h3>
+    <div class="frm">
+      <input id="ceTitle" placeholder="예: 자격증 스터디 모임">
+      <div class="row2">
+        <input id="ceDate" type="date">
+        <select id="ceCat">
+          <option value="custom">내 일정</option><option value="goal">목표</option>
+          <option value="comp">컴활</option><option value="gisa">기능사</option>
+          <option value="hist">한국사</option><option value="kor">KBS한국어</option>
+          <option value="toeic">토익</option><option value="opic">오픽</option>
+        </select>
+      </div>
+      <button class="btn" onclick="addCustomEvent()">추가하기</button>
+    </div>
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,5 @@
+{
+  "name": "meister-calendar-neis-proxy",
+  "main": "neis-proxy.js",
+  "compatibility_date": "2026-07-01"
+}
